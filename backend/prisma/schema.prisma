@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Filme {
+  id          Int      @id @default(autoincrement())
+  titulo      String   @unique
+  diretor     String
+  genero      String
+  duracao     Int
+  sinopse     String   
+  urlCartaz   String?
+  sessoes     Sessao[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Sala {
+  id          Int      @id @default(autoincrement())
+  numero      Int      @unique
+  capacidade  Int
+  tipo        String   // Ex: "2D", "3D", "IMAX"
+  sessoes     Sessao[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Sessao {
+  id            Int         @id @default(autoincrement())
+  filmeId       Int
+  salaId        Int
+  horarioInicio DateTime
+  precoIngresso Float
+  filme         Filme       @relation(fields: [filmeId], references: [id])
+  sala          Sala        @relation(fields: [salaId], references: [id])
+  vendas        Venda[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([filmeId, salaId, horarioInicio]) // Garante que não haja sessões duplicadas
+}
+
+model Venda {
+  id          Int      @id @default(autoincrement())
+  sessaoId    Int
+  quantidade  Int
+  valorTotal  Float
+  sessao      Sessao   @relation(fields: [sessaoId], references: [id])
+  dataVenda   DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
