@@ -1,6 +1,4 @@
-// src/components/pages/SessoesDisponiveis.jsx
-
-import { useContext, useEffect, useState } from 'react';
+import { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../common/Navbar';
 import { CinemaContext } from '../../context/CinemaContext';
@@ -12,24 +10,8 @@ function SessoesDisponiveis() {
     .filter((s) => new Date(s.horarioInicio) >= new Date())
     .sort((a, b) => new Date(a.horarioInicio).getTime() - new Date(b.horarioInicio).getTime());
 
-  // CORREÇÃO AQUI
-  if (loading) {
-    return (
-      <>
-        <Navbar />
-        <main className="container mt-5">Carregando sessões...</main>
-      </>
-    );
-  }
-  // CORREÇÃO AQUI
-  if (error) {
-    return (
-      <>
-        <Navbar />
-        <main className="container mt-5" style={{ color: 'red' }}>Erro: {error}</main>
-      </>
-    );
-  }
+  if (loading) return <><Navbar /><main className="container mt-5">Carregando sessões...</main></>;
+  if (error) return <><Navbar /><main className="container mt-5" style={{ color: 'red' }}>Erro: {error}</main></>;
 
   return (
     <>

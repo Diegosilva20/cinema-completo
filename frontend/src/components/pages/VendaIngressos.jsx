@@ -1,5 +1,3 @@
-// src/components/pages/VendaIngressos.jsx
-
 import { useState, useContext, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '../common/Navbar';
@@ -11,12 +9,18 @@ import ConfirmationModal from '../common/ConfirmationModal';
 import { CinemaContext } from '../../context/CinemaContext';
 
 function VendaIngressos() {
-  const { filmes, salas, sessoes, addVenda, loading, error } = useContext(CinemaContext);
+  const { filmes, salas, sessoes, addVenda, loading, error } = useContext(CinemaContext); // Removi 'ingressos', 'setIngressos'
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     sessaoId: searchParams.get('sessao') || '',
     quantidade: '',
+    // nomeCliente, cpf, assento, pagamento foram removidos do DTO de Venda no backend
+    // Se esses campos são importantes para o negócio, você pode:
+    // 1. Adicionar esses campos como opcionais no seu DTO de Venda (e no modelo Prisma)
+    // 2. Ou tratar esses dados apenas no frontend (não ideal para persistência)
+    // 3. Ou criar um novo modelo (ex: 'IngressoCliente') no backend com esses detalhes
+    // Por enquanto, o foco é o que o backend Venda espera: sessaoId, quantidade.
   });
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState('success');
@@ -28,7 +32,7 @@ function VendaIngressos() {
       const filme = filmes.find((f) => f.id === s.filmeId);
       const sala = salas.find((sala) => sala.id === s.salaId);
       return {
-        value: s.id,
+        value: String(s.id), // Garante que é string para o select
         label: `${filme ? filme.titulo : 'Filme não encontrado'} - ${
           sala ? `Sala ${sala.numero} (${sala.tipo})` : 'Sala não encontrada'
         } - ${new Date(s.horarioInicio).toLocaleString('pt-BR')}`,
@@ -36,7 +40,8 @@ function VendaIngressos() {
     });
 
   useEffect(() => {
-    if (formData.sessaoId && !sessoes.some(s => s.id === parseInt(formData.sessaoId))) {
+    // Se a sessão na URL não estiver mais disponível, limpa o campo
+    if (formData.sessaoId && !sessoes.some(s => String(s.id) === formData.sessaoId)) {
         setFormData(prev => ({ ...prev, sessaoId: '' }));
     }
   }, [sessoes, formData.sessaoId]);
@@ -57,6 +62,12 @@ function VendaIngressos() {
       return;
     }
 
+    if (!formData.sessaoId) {
+        setMessage('Por favor, selecione uma sessão.');
+        setMessageType('danger');
+        return;
+    }
+
     setShowModal(true);
   };
 
@@ -64,8 +75,9 @@ function VendaIngressos() {
     setShowModal(false);
 
     const vendaParaBackend = {
-      sessaoId: parseInt(formData.sessaoId),
-      quantidade: parseInt(formData.quantidade),
+      sessaoId: parseInt(formData.sessaoId, 10),
+      quantidade: parseInt(formData.quantidade, 10),
+      // valorTotal será calculado no backend
     };
 
     try {
@@ -86,24 +98,8 @@ function VendaIngressos() {
     }
   };
 
-  // CORREÇÃO AQUI
-  if (loading) {
-    return (
-      <>
-        <Navbar />
-        <main className="container mt-5">Carregando dados...</main>
-      </>
-    );
-  }
-  // CORREÇÃO AQUI
-  if (error) {
-    return (
-      <>
-        <Navbar />
-        <main className="container mt-5" style={{ color: 'red' }}>Erro: {error}</main>
-      </>
-    );
-  }
+  if (loading) return <><Navbar /><main className="container mt-5">Carregando dados para venda...</main></>;
+  if (error) return <><Navbar /><main className="container mt-5" style={{ color: 'red' }}>Erro: {error}</main></>;
 
   return (
     <>
